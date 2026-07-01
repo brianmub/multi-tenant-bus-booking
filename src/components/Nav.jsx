@@ -1,15 +1,17 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTenant } from "../tenants/useTenant";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Nav() {
   const location = useLocation();
   const navigate = useNavigate();
   const tenant = useTenant();
+  const { t } = useLanguage();
 
   const tabs = [
-    { id: "home", label: "Search", path: "/home", icon: "🔍" },
-    { id: "bookings", label: "Tickets", path: "/bookings", icon: "🎟️" },
-    { id: "profile", label: "Profile", path: "/profile", icon: "👤" },
+    { id: "home", label: t("nav_search"), path: "/home", icon: "🔍" },
+    { id: "bookings", label: t("nav_tickets"), path: "/bookings", icon: "🎟️" },
+    { id: "profile", label: t("nav_profile"), path: "/profile", icon: "👤" },
   ];
 
   return (

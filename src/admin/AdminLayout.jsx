@@ -10,6 +10,7 @@ export default function AdminLayout({ children }) {
     { label: "Bookings", path: "/admin/bookings", icon: "🎟️" },
     { label: "Fleet Status", path: "/admin/fleet", icon: "🚌" },
     { label: "Live Fleet Map", path: "/admin/map", icon: "🗺️" },
+    { label: "Support Desk", path: "/admin/support", icon: "🎧" },
     { label: "Operational Controls", path: "/admin/controls", icon: "⚙️" },
     { label: "Settings", path: "/admin/settings", icon: "🔧" },
   ];

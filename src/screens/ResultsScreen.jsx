@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useTenant } from "../tenants/useTenant";
+import { supabase } from "../utils/supabaseClient";
 import BusCard from "../components/BusCard";
 import Nav from "../components/Nav";
 import CurrencyBar from "../components/CurrencyBar";
 import AdminCutoffPanel from "../admin/AdminCutoffPanel";
-import { getFleet } from "../utils/fleet";
+import { getFleet, getBusDetails } from "../utils/fleet";
 import { getOccupancy } from "../utils/storage";
 
 const isAdminMode = import.meta.env.VITE_ADMIN_MODE === "true";
@@ -17,32 +18,97 @@ export default function ResultsScreen() {
 
   const [cutoffConfig, setCutoffConfig] = useState({
     bookingCutoffMins: 30,
-    closingSoonMins: 60
+    closingSoonMins: 60,
   });
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
-  const date = searchParams.get("date") || new Date().toISOString();
+  const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
 
-  // Dynamic fleet with real-time capacity calculation
-  const fleet = getFleet(tenant.id);
-  const buses = fleet.map((bus, index) => {
-    const occupied = getOccupancy(bus.id, date);
-    const available = bus.capacity - occupied;
-    
-    // Simulate staggered times for demo purposes
-    const hour = 8 + (index * 2);
-    const time = `${hour < 10 ? '0' + hour : hour}:30 AM`;
+  const [buses, setBuses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    return {
-      ...bus,
-      time,
-      routeName: `${from} to ${to}`,
-      price: bus.class === "VIP" ? 25 : bus.class === "Executive" ? 20 : 15,
-      availableSeats: available,
-      busNumber: bus.reg
-    };
-  });
+  useEffect(() => {
+    async function loadSchedules() {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("schedules")
+          .select("*")
+          .eq("route_from", from)
+          .eq("route_to", to);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const mapped = data.map((sch) => {
+            const bus = getBusDetails(sch.bus_id) || { reg: "GEN-01", capacity: 40, class: "Luxury VIP" };
+            const occupied = getOccupancy(sch.bus_id, date);
+            const available = bus.capacity - occupied;
+
+            return {
+              id: sch.bus_id,
+              reg: bus.reg,
+              model: bus.model || "Scania Marcopolo G8",
+              capacity: bus.capacity,
+              class: bus.class,
+              time: sch.departure_time,
+              routeName: `${from} to ${to}`,
+              price: parseFloat(sch.price_usd),
+              availableSeats: available,
+              busNumber: bus.reg,
+            };
+          });
+          setBuses(mapped);
+        } else {
+          // Fallback to static mapping if database is unseeded
+          const fleet = getFleet();
+          const fallback = fleet.map((bus, index) => {
+            const occupied = getOccupancy(bus.id, date);
+            const available = bus.capacity - occupied;
+            const hour = 8 + index * 2;
+            const time = `${hour < 10 ? "0" + hour : hour}:30 AM`;
+
+            return {
+              ...bus,
+              time,
+              routeName: `${from} to ${to}`,
+              price: bus.class === "Luxury VIP" ? 25 : bus.class === "Executive" ? 20 : 15,
+              availableSeats: available,
+              busNumber: bus.reg,
+            };
+          });
+          setBuses(fallback);
+        }
+      } catch (err) {
+        console.warn("Error loading database schedules, falling back to static fleet:", err.message);
+        // Fallback
+        const fleet = getFleet();
+        const fallback = fleet.map((bus, index) => {
+          const occupied = getOccupancy(bus.id, date);
+          const available = bus.capacity - occupied;
+          const hour = 8 + index * 2;
+          const time = `${hour < 10 ? "0" + hour : hour}:30 AM`;
+
+          return {
+            ...bus,
+            time,
+            routeName: `${from} to ${to}`,
+            price: bus.class === "Luxury VIP" ? 25 : bus.class === "Executive" ? 20 : 15,
+            availableSeats: available,
+            busNumber: bus.reg,
+          };
+        });
+        setBuses(fallback);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (from && to) {
+      loadSchedules();
+    }
+  }, [from, to, date]);
 
   return (
     <div style={{
@@ -88,18 +154,26 @@ export default function ResultsScreen() {
       {/* Results */}
       <div style={{ padding: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, color: "#666", fontWeight: "600" }}>{buses.length} Buses found</span>
+          <span style={{ fontSize: 14, color: "#666", fontWeight: "600" }}>
+            {isLoading ? "Searching routes..." : `${buses.length} Buses found`}
+          </span>
           <button style={{ background: "none", border: "none", color: tenant.primaryColor, fontWeight: "700", fontSize: 14 }}>Filter ⚙️</button>
         </div>
 
-        {buses.map(bus => (
-          <BusCard 
-            key={bus.id} 
-            bus={bus} 
-            cutoffConfig={cutoffConfig}
-            onClick={() => navigate(`/seats/${bus.id}`)}
-          />
-        ))}
+        {isLoading ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b", fontSize: 14 }}>
+            Searching database...
+          </div>
+        ) : (
+          buses.map((bus) => (
+            <BusCard 
+              key={bus.id} 
+              bus={bus} 
+              cutoffConfig={cutoffConfig}
+              onClick={() => navigate(`/seats/${bus.id}`, { state: { date } })}
+            />
+          ))
+        )}
       </div>
 
       {isAdminMode && (

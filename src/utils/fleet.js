@@ -1,33 +1,22 @@
 /**
- * Fleet Registry for the Multi-tenant Bus Platform.
- * Defines the physical bus assets for each operator.
+ * Fleet Registry for the Genesis Bus Booking App.
+ * Defines the physical bus assets for Genesis Bus Company.
  */
 
 export const FLEET_REGISTRY = {
-  zupco: [
-    { id: "Z-101", reg: "B 201 AA", model: "Yutong ZK6122H", capacity: 62, status: "active", class: "Standard" },
-    { id: "Z-102", reg: "B 202 AA", model: "Yutong ZK6122H", capacity: 62, status: "active", class: "Standard" },
-    { id: "Z-103", reg: "B 203 AA", model: "Golden Dragon", capacity: 65, status: "maintenance", class: "Economy" },
-    { id: "Z-104", reg: "B 204 AA", model: "Yutong ZK6122H", capacity: 62, status: "active", class: "Standard" },
-  ],
-  swift: [
-    { id: "S-201", reg: "JHB 405 GP", model: "Scania Marcopolo G7", capacity: 52, status: "active", class: "Executive" },
-    { id: "S-202", reg: "JHB 406 GP", model: "Scania Marcopolo G7", capacity: 52, status: "active", class: "Executive" },
-    { id: "S-203", reg: "JHB 407 GP", model: "Mercedes-Benz Paradiso", capacity: 48, status: "active", class: "VIP" },
-    { id: "S-204", reg: "JHB 408 GP", model: "Scania Marcopolo G7", capacity: 52, status: "maintenance", class: "Executive" },
-  ],
-  horizon: [
-    { id: "H-301", reg: "B 777 BW", model: "Volvo B11R", capacity: 56, status: "active", class: "Luxury" },
-    { id: "H-302", reg: "B 778 BW", model: "Volvo B11R", capacity: 56, status: "active", class: "Luxury" },
-    { id: "H-303", reg: "B 779 BW", model: "MAN Lion's Coach", capacity: 50, status: "active", class: "Executive" },
+  genesis: [
+    { id: "G-401", reg: "GEN 001 ZW", model: "Scania Marcopolo G8", capacity: 40, status: "active", class: "Luxury VIP", driver_name: "Tendai Maposa", driver_phone: "+263 772 123 456", operator_hotline: "+263 8677 000 000" },
+    { id: "G-402", reg: "GEN 002 ZW", model: "Scania Marcopolo G8", capacity: 40, status: "active", class: "Luxury VIP", driver_name: "Sipho Ndlovu", driver_phone: "+263 712 987 654", operator_hotline: "+263 8677 000 000" },
+    { id: "G-403", reg: "GEN 003 ZW", model: "Volvo B11R", capacity: 50, status: "active", class: "Executive", driver_name: "Michael Chigora", driver_phone: "+263 773 111 222", operator_hotline: "+263 8677 000 000" },
+    { id: "G-404", reg: "GEN 004 ZW", model: "Volvo B11R", capacity: 50, status: "maintenance", class: "Executive", driver_name: "Tinashe Dube", driver_phone: "+263 714 555 666", operator_hotline: "+263 8677 000 000" },
   ]
 };
 
 /**
- * Gets the fleet for a specific tenant
+ * Gets the fleet (defaults to Genesis)
  */
 export function getFleet(tenantId) {
-  return FLEET_REGISTRY[tenantId] || [];
+  return FLEET_REGISTRY.genesis;
 }
 
 /**

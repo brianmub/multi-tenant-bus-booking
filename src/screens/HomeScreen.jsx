@@ -1,19 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "../tenants/useTenant";
+import { supabase } from "../utils/supabaseClient";
+import { useLanguage } from "../context/LanguageContext";
 import LogoBox from "../components/LogoBox";
 import Nav from "../components/Nav";
 
 export default function HomeScreen() {
   const tenant = useTenant();
   const navigate = useNavigate();
+  const { locale, setLocale, t } = useLanguage();
   
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [cities, setCities] = useState(tenant.cities);
+  const [popularRoutes, setPopularRoutes] = useState([
+    { from: "Harare", to: "Bulawayo", price: 15 },
+    { from: "Harare", to: "Mutare", price: 10 },
+    { from: "Bulawayo", to: "Beit Bridge", price: 12 },
+  ]);
 
   const [aiQuery, setAiQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+
+  // Fetch unique routes/cities from schedules database
+  useEffect(() => {
+    async function loadRoutesAndPopular() {
+      try {
+        const { data, error } = await supabase
+          .from("schedules")
+          .select("route_from, route_to, price_usd");
+        
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Extract unique cities
+          const dbCities = data.flatMap((s) => [s.route_from, s.route_to]);
+          const uniqueCities = Array.from(new Set([...tenant.cities, ...dbCities]));
+          setCities(uniqueCities);
+
+          // Extract popular routes
+          const uniqueRoutes = [];
+          const seen = new Set();
+          for (const item of data) {
+            const key = `${item.route_from}-${item.route_to}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniqueRoutes.push({
+                from: item.route_from,
+                to: item.route_to,
+                price: parseFloat(item.price_usd),
+              });
+            }
+            if (uniqueRoutes.length >= 3) break;
+          }
+          setPopularRoutes(uniqueRoutes);
+        }
+      } catch (e) {
+        console.warn("Falling back to static routes due to connection error:", e.message);
+      }
+    }
+    loadRoutesAndPopular();
+  }, []);
 
   const handleAiSearch = async (e) => {
     e.preventDefault();
@@ -21,7 +70,7 @@ export default function HomeScreen() {
     setIsAiLoading(true);
     try {
       const { getAiSearch } = await import("../utils/ai");
-      const result = await getAiSearch(aiQuery, tenant.cities);
+      const result = await getAiSearch(aiQuery, cities);
       if (result.from) setFrom(result.from);
       if (result.to) setTo(result.to);
       if (result.date) setDate(result.date);
@@ -38,12 +87,6 @@ export default function HomeScreen() {
     if (!from || !to) return;
     navigate(`/results?from=${from}&to=${to}&date=${date}`);
   };
-
-  const popularRoutes = [
-    { from: "Harare", to: "Bulawayo", price: 15 },
-    { from: "Harare", to: "Mutare", price: 10 },
-    { from: "Bulawayo", to: "Victoria Falls", price: 20 },
-  ];
 
   return (
     <div style={{
@@ -63,12 +106,22 @@ export default function HomeScreen() {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
-            <div style={{ fontSize: 14, opacity: 0.8, fontWeight: "600" }}>Welcome to</div>
+            <div style={{ display: "flex", gap: 8, background: "rgba(255,255,255,0.2)", padding: 4, borderRadius: 20, marginBottom: 12, width: "fit-content" }}>
+              {["en", "sn", "nd"].map(l => (
+                <button key={l} onClick={() => setLocale(l)} style={{
+                  background: locale === l ? "#fff" : "transparent",
+                  color: locale === l ? tenant.primaryColor : "#fff",
+                  border: "none", borderRadius: 16, padding: "4px 8px", fontSize: 12, fontWeight: "800", cursor: "pointer", textTransform: "uppercase", transition: "0.2s"
+                }}>
+                  {l}
+                </button>
+              ))}
+            </div>
             <div style={{ fontSize: 24, fontWeight: "800" }}>{tenant.name}</div>
           </div>
           <LogoBox size={44} />
         </div>
-        <div style={{ fontSize: 16, fontWeight: "500" }}>Where are you heading today?</div>
+        <div style={{ fontSize: 16, fontWeight: "500" }}>{t("where_to")}</div>
       </div>
 
       {/* AI Search Assistant */}
@@ -131,7 +184,7 @@ export default function HomeScreen() {
       }}>
         <form onSubmit={handleSearch} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block" }}>FROM</label>
+            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block", textTransform: "uppercase" }}>{t("from")}</label>
             <select 
               value={from}
               onChange={(e) => setFrom(e.target.value)}
@@ -146,12 +199,12 @@ export default function HomeScreen() {
               }}
             >
               <option value="">Select City</option>
-              {tenant.cities.map(city => <option key={city} value={city}>{city}</option>)}
+              {cities.map((city) => <option key={city} value={city}>{city}</option>)}
             </select>
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block" }}>TO</label>
+            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block", textTransform: "uppercase" }}>{t("to")}</label>
             <select 
               value={to}
               onChange={(e) => setTo(e.target.value)}
@@ -166,12 +219,12 @@ export default function HomeScreen() {
               }}
             >
               <option value="">Select City</option>
-              {tenant.cities.map(city => <option key={city} value={city}>{city}</option>)}
+              {cities.map((city) => <option key={city} value={city}>{city}</option>)}
             </select>
           </div>
 
           <div>
-            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block" }}>TRAVEL DATE</label>
+            <label style={{ fontSize: 12, fontWeight: "700", color: "#999", marginBottom: 8, display: "block", textTransform: "uppercase" }}>{t("date")}</label>
             <input 
               type="date"
               value={date}
@@ -203,16 +256,14 @@ export default function HomeScreen() {
               boxShadow: `0 8px 20px ${tenant.primaryColor}44`
             }}
           >
-            Search Buses
+            {t("search_bus")}
           </button>
         </form>
       </div>
 
-      {/* Popular Routes */}
       <div style={{ padding: "32px 24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ fontSize: 18, fontWeight: "800", color: "#1a1a1a", margin: 0 }}>Popular Routes</h3>
-          <span style={{ fontSize: 13, color: tenant.primaryColor, fontWeight: "700" }}>See all</span>
+          <h3 style={{ fontSize: 18, fontWeight: "800", color: "#1a1a1a", margin: 0 }}>{t("recent_searches")}</h3>
         </div>
         
         {popularRoutes.map((route, i) => (

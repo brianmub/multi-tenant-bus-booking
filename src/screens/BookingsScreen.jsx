@@ -83,23 +83,40 @@ export default function BookingsScreen() {
                 </div>
               </div>
 
-              <button 
-                onClick={() => navigate("/confirmation", { state: booking })}
-                style={{
-                  width: "100%",
-                  marginTop: 20,
-                  background: "#f1f5f9",
-                  color: "#475569",
-                  border: "none",
-                  padding: "10px",
-                  borderRadius: 12,
-                  fontSize: 12,
-                  fontWeight: "700",
-                  cursor: "pointer"
-                }}
-              >
-                View Ticket & QR
-              </button>
+              <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+                <button 
+                  onClick={() => navigate(`/track/${booking.id}`)}
+                  style={{
+                    flex: 1,
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    border: "none",
+                    padding: "12px",
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: "800",
+                    cursor: "pointer"
+                  }}
+                >
+                  📍 Track Live
+                </button>
+                <button 
+                  onClick={() => navigate("/confirmation", { state: booking })}
+                  style={{
+                    flex: 1,
+                    background: "#f1f5f9",
+                    color: "#475569",
+                    border: "none",
+                    padding: "12px",
+                    borderRadius: 12,
+                    fontSize: 12,
+                    fontWeight: "700",
+                    cursor: "pointer"
+                  }}
+                >
+                  View Ticket
+                </button>
+              </div>
             </div>
           ))
         )}

@@ -1,88 +1,32 @@
 export const TENANT_REGISTRY = {
-  zupco: {
-    id: "zupco",
-    name: "ZUPCO Express",
-    tagline: "Zimbabwe United Passenger Company",
-    primaryColor: "#16a34a",
-    primaryDark: "#14532d",
-    bgGradient: "linear-gradient(135deg, #14532d 0%, #16a34a 100%)",
-    logo: "Z",
-    logoShape: "square",           // square | circle | diamond
+  genesis: {
+    id: "genesis",
+    name: "Genesis Bus Company",
+    tagline: "Safe and Reliable Journeys",
+    primaryColor: "#d4af37",        // Gold
+    primaryDark: "#121212",         // Black
+    bgGradient: "linear-gradient(135deg, #121212 0%, #1e1e1e 50%, #d4af37 100%)",
+    logo: "G",
+    logoShape: "circle",
     baseCurrency: "USD",
-    acceptedCurrencies: ["USD", "ZAR", "BWP"],
-    supportPhone: "+263 4 700 000",
-    supportEmail: "support@zupco.co.zw",
-    website: "zupco.co.zw",
+    acceptedCurrencies: ["USD", "ZAR"],
+    supportPhone: "+263 77 123 4567",
+    supportEmail: "info@genesisbus.co.zw",
+    website: "genesisbus.co.zw",
     routes: [
       "Harare ↔ Bulawayo",
       "Harare ↔ Mutare",
-      "Harare ↔ Gweru",
+      "Bulawayo ↔ Beit Bridge",
+      "Johannesburg ↔ Bulawayo",
     ],
     bookingCutoffMins: 60,
-    cutoffReference: "checkin",    // "checkin" | "departure"
-    checkinOffsetMins: 30,
-    paymentMethods: ["ozow", "card", "paystack"],
-    cities: [
-      "Harare", "Bulawayo", "Mutare", "Gweru",
-      "Masvingo", "Victoria Falls", "Kariba", "Chinhoyi",
-    ],
-  },
-
-  swift: {
-    id: "swift",
-    name: "Swift Coaches",
-    tagline: "Your Journey, Our Priority",
-    primaryColor: "#2563eb",
-    primaryDark: "#1e3a8a",
-    bgGradient: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
-    logo: "S",
-    logoShape: "circle",
-    baseCurrency: "ZAR",
-    acceptedCurrencies: ["USD", "ZAR", "BWP"],
-    supportPhone: "+27 11 123 4567",
-    supportEmail: "info@swiftcoaches.co.za",
-    website: "swiftcoaches.co.za",
-    routes: [
-      "Harare ↔ Johannesburg",
-      "Harare ↔ Victoria Falls",
-      "Bulawayo ↔ Beit Bridge",
-    ],
-    bookingCutoffMins: 45,
-    cutoffReference: "departure",
-    checkinOffsetMins: 45,
-    paymentMethods: ["snapscan", "ozow", "card"],
-    cities: [
-      "Harare", "Johannesburg", "Pretoria",
-      "Victoria Falls", "Bulawayo", "Beit Bridge",
-    ],
-  },
-
-  horizon: {
-    id: "horizon",
-    name: "Horizon Transit",
-    tagline: "Moving Botswana Forward",
-    primaryColor: "#7c3aed",
-    primaryDark: "#4c1d95",
-    bgGradient: "linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)",
-    logo: "H",
-    logoShape: "diamond",
-    baseCurrency: "BWP",
-    acceptedCurrencies: ["USD", "ZAR", "BWP"],
-    supportPhone: "+267 395 0000",
-    supportEmail: "hello@horizontransit.bw",
-    website: "horizontransit.bw",
-    routes: [
-      "Gaborone ↔ Francistown",
-      "Gaborone ↔ Kasane",
-      "Francistown ↔ Maun",
-    ],
-    bookingCutoffMins: 120,
     cutoffReference: "departure",
     checkinOffsetMins: 30,
-    paymentMethods: ["paystack", "card", "ozow"],
+    paymentMethods: ["card", "paystack"],
     cities: [
-      "Gaborone", "Francistown", "Kasane",
-      "Maun", "Lobatse", "Palapye",
+      "Harare", "Bulawayo", "Mutare", "Gweru", "Beit Bridge",
+      "Johannesburg", "Pretoria", "Polokwane", "Musina", "Gwanda"
     ],
   },
 };
+export const GENESIS_CONFIG = TENANT_REGISTRY.genesis;

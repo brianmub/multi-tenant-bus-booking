@@ -3,6 +3,8 @@ import { useTenant } from "../tenants/useTenant";
 import AdminCutoffPanel from "./AdminCutoffPanel";
 import { getFleet } from "../utils/fleet";
 import { getAllBookings, getOccupancy } from "../utils/storage";
+import { supabase } from "../utils/supabaseClient";
+import { useEffect } from "react";
 
 export default function AdminDashboard() {
   const tenant = useTenant();
@@ -10,6 +12,26 @@ export default function AdminDashboard() {
     bookingCutoffMins: tenant.bookingCutoffMins || 60,
     closingSoonMins: 120,
   });
+
+  const [mapEnabled, setMapEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase.from("app_settings").select("settings").eq("id", "global").single();
+        if (data && data.settings) setMapEnabled(data.settings.enable_live_map);
+      } catch (e) {
+        console.log("Settings not loaded", e.message);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const toggleMap = async () => {
+    const newVal = !mapEnabled;
+    setMapEnabled(newVal);
+    await supabase.from("app_settings").update({ settings: { enable_live_map: newVal } }).eq("id", "global");
+  };
 
   const today = new Date().toISOString().split('T')[0];
   const allBookings = getAllBookings();
@@ -23,7 +45,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Today's Bookings", value: todayBookings.length.toString(), change: "+100%", icon: "🎟️" },
     { label: "Active Buses", value: `${activeBuses}/${fleet.length}`, change: "Stable", icon: "🚌" },
-    { label: "Total Revenue", value: `R ${totalRevenue.toLocaleString()}`, change: "Live", icon: "💰" },
+    { label: "Total Revenue", value: `${tenant.baseCurrency} ${totalRevenue.toLocaleString()}`, change: "Live", icon: "💰" },
     { label: "Avg. Occupancy", value: "65%", change: "+2%", icon: "⭐" },
   ];
 
@@ -70,9 +92,9 @@ export default function AdminDashboard() {
           <h2 style={{ fontSize: 18, fontWeight: "800", color: "#0f172a", marginBottom: 24 }}>Recent Departures</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[
-              { route: "Johannesburg → Durban", time: "10:30 AM", status: "Departed", passengers: "48/52" },
-              { route: "Pretoria → Cape Town", time: "11:45 AM", status: "Boarding", passengers: "42/52" },
-              { route: "Soweto → Bloemfontein", time: "01:15 PM", status: "Scheduled", passengers: "12/52" },
+              { route: "Harare → Bulawayo", time: "10:30 AM", status: "Departed", passengers: "38/40" },
+              { route: "Harare → Mutare", time: "11:45 AM", status: "Boarding", passengers: "42/50" },
+              { route: "Bulawayo → Beit Bridge", time: "01:15 PM", status: "Scheduled", passengers: "12/50" },
             ].map((bus, i) => (
               <div key={i} style={{
                 display: "flex",
@@ -119,6 +141,32 @@ export default function AdminDashboard() {
               Adjust real-time booking windows and cutoff thresholds.
             </p>
             <AdminCutoffPanel config={cutoffConfig} onChange={setCutoffConfig} inline={true} />
+          </div>
+
+          {/* Tracking Configuration */}
+          <div style={{
+            background: "#fff",
+            padding: 24,
+            borderRadius: 32,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.05)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h3 style={{ fontSize: 16, fontWeight: "800", margin: 0 }}>Interactive Live Maps</h3>
+              <button onClick={toggleMap} style={{
+                background: mapEnabled ? "#16a34a" : "#e2e8f0",
+                width: 48, height: 28, borderRadius: 100, border: "none", position: "relative", cursor: "pointer",
+                transition: "background 0.2s"
+              }}>
+                <div style={{
+                  background: "#fff", width: 20, height: 20, borderRadius: "50%", position: "absolute", top: 4,
+                  left: mapEnabled ? 24 : 4, transition: "left 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                }} />
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: "#64748b", lineHeight: "1.5", margin: 0 }}>
+              {mapEnabled ? "Leaflet GPS maps are active. Passengers see actual street maps." : "Map disabled. Passengers will see CSS estimation progress."}
+            </p>
           </div>
 
           {/* AI Optimizer */}

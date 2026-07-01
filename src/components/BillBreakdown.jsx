@@ -1,12 +1,12 @@
 import { useCurrency } from "../hooks/useCurrency";
 import { fmtConverted } from "../utils/currency";
 
-export default function BillBreakdown({ subtotal, seatsCount }) {
+export default function BillBreakdown({ subtotal, seatsCount, luggageFee = 0 }) {
   const { currency } = useCurrency();
   
   const tax = subtotal * 0.15; // 15% tax
   const serviceFee = 2.00; // Flat service fee
-  const total = subtotal + tax + serviceFee;
+  const total = subtotal + tax + serviceFee + luggageFee;
 
   return (
     <div style={{
@@ -19,6 +19,12 @@ export default function BillBreakdown({ subtotal, seatsCount }) {
         <span style={{ fontSize: 14, color: "#64748b" }}>Tickets ({seatsCount})</span>
         <span style={{ fontSize: 14, fontWeight: "600", color: "#1e293b" }}>{fmtConverted(subtotal, currency.id)}</span>
       </div>
+      {luggageFee > 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <span style={{ fontSize: 14, color: "#64748b" }}>Luggage Excess Fee</span>
+          <span style={{ fontSize: 14, fontWeight: "600", color: "#1e293b" }}>{fmtConverted(luggageFee, currency.id)}</span>
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ fontSize: 14, color: "#64748b" }}>Taxes & VAT</span>
         <span style={{ fontSize: 14, fontWeight: "600", color: "#1e293b" }}>{fmtConverted(tax, currency.id)}</span>
