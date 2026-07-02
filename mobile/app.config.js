@@ -7,11 +7,17 @@ module.exports = ({ config }) => {
     orientation: "portrait",
     icon: "./assets/tenants/genesis/icon.png",
     userInterfaceStyle: "light",
-    splash: {
-      image: "./assets/tenants/genesis/splash.png",
-      resizeMode: "contain",
-      backgroundColor: "#121212",
-    },
+    plugins: [
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/tenants/genesis/splash.png",
+          resizeMode: "contain",
+          backgroundColor: "#121212",
+        },
+      ],
+      "@react-native-community/datetimepicker",
+    ],
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.genesisbus.app",

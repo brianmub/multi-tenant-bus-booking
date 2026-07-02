@@ -52,8 +52,6 @@ export async function saveBooking(booking: Omit<Booking, "id" | "timestamp">): P
         total: newBooking.total,
         currency: newBooking.currency,
         payment_method: newBooking.paymentMethod,
-        luggage_info: newBooking.luggageInfo || { bags: 0, fee: 0 },
-        payment_details: newBooking.paymentDetails || { status: "PAID", ref: "mock", gateway: "simulated" },
         created_at: newBooking.timestamp,
       });
 
