@@ -17,6 +17,27 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
   const [name, setName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+
+  const handleForgotPasswordSubmit = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+
+      Alert.alert('Success', 'Password reset instructions sent to your email.');
+      setIsForgotPassword(false);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to send reset instructions.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const rules = [
     { id: 'len', label: 'At least 8 characters', test: password.length >= 8 },
@@ -109,14 +130,24 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
     }
   };
 
+  let screenTitle = isSignUp ? 'Create Account' : 'Welcome Back';
+  let screenSubtitle = isSignUp 
+    ? 'Sign up to manage bookings and track buses' 
+    : 'Sign in to access your digital bus tickets';
+
+  if (isForgotPassword) {
+    screenTitle = 'Recover Account';
+    screenSubtitle = 'Enter your email to receive password reset instructions';
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.logoCircle}>
           <Text style={styles.logoText}>G</Text>
         </View>
-        <Text style={styles.title}>{isSignUp ? 'Create Account' : 'Welcome Back'}</Text>
-        <Text style={styles.subtitle}>{isSignUp ? 'Sign up to manage bookings and track buses' : 'Sign in to access your digital bus tickets'}</Text>
+        <Text style={styles.title}>{screenTitle}</Text>
+        <Text style={styles.subtitle}>{screenSubtitle}</Text>
       </View>
 
       <View style={styles.form}>
@@ -146,28 +177,30 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
           />
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordInputWrapper}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="••••••••"
-              placeholderTextColor="#666"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity 
-              style={styles.eyeButton} 
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Text style={styles.eyeButtonText}>
-                {showPassword ? '👁️' : '🙈'}
-              </Text>
-            </TouchableOpacity>
+        {!isForgotPassword && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor="#666"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeButtonText}>
+                  {showPassword ? '👁️' : '🙈'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {isSignUp && password.length > 0 && (
           <View style={styles.strengthContainer}>
@@ -253,31 +286,53 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
           </View>
         )}
 
+        {!isSignUp && !isForgotPassword && (
+          <TouchableOpacity 
+            style={styles.forgotButton} 
+            onPress={() => setIsForgotPassword(true)}
+          >
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity 
           style={styles.button} 
-          onPress={handleAuth} 
+          onPress={isForgotPassword ? handleForgotPasswordSubmit : handleAuth} 
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#121212" />
           ) : (
-            <Text style={styles.buttonText}>{isSignUp ? 'Sign Up' : 'Sign In'}</Text>
+            <Text style={styles.buttonText}>
+              {isForgotPassword ? 'Send Instructions' : isSignUp ? 'Sign Up' : 'Sign In'}
+            </Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.switchButton} 
-          onPress={() => {
-            setIsSignUp(!isSignUp);
-            setPassword('');
-            setConfirmPassword('');
-            setShowPassword(false);
-          }}
-        >
-          <Text style={styles.switchText}>
-            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-          </Text>
-        </TouchableOpacity>
+        {isForgotPassword ? (
+          <TouchableOpacity 
+            style={styles.switchButton} 
+            onPress={() => {
+              setIsForgotPassword(false);
+            }}
+          >
+            <Text style={styles.switchText}>Back to Sign In</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.switchButton} 
+            onPress={() => {
+              setIsSignUp(!isSignUp);
+              setPassword('');
+              setConfirmPassword('');
+              setShowPassword(false);
+            }}
+          >
+            <Text style={styles.switchText}>
+              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.dividerContainer}>
           <View style={styles.divider} />
@@ -495,5 +550,16 @@ const styles = StyleSheet.create({
   },
   buttonTextDisabled: {
     color: '#bbb',
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  forgotText: {
+    color: '#d4af37',
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
