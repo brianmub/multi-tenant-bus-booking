@@ -111,7 +111,7 @@ DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Enable insert for authenticated users on signup" ON public.profiles;
-CREATE POLICY "Enable insert for authenticated users on signup" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Enable insert for authenticated users on signup" ON public.profiles FOR INSERT WITH CHECK (true);
 
 -- Schedules
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.schedules;

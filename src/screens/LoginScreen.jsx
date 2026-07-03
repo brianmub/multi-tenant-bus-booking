@@ -12,15 +12,52 @@ export default function LoginScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const rules = [
+    { id: "len", label: "At least 8 characters", test: password.length >= 8 },
+    { id: "upper", label: "At least one uppercase letter (A-Z)", test: /[A-Z]/.test(password) },
+    { id: "lower", label: "At least one lowercase letter (a-z)", test: /[a-z]/.test(password) },
+    { id: "num", label: "At least one number (0-9)", test: /[0-9]/.test(password) },
+    { id: "special", label: "At least one special char (e.g. !@#$)", test: /[^A-Za-z0-9]/.test(password) }
+  ];
+
+  const strengthScore = rules.filter(r => r.test).length;
+  const isPasswordValid = strengthScore === rules.length;
+
+  const getStrengthText = () => {
+    if (!password) return "";
+    switch (strengthScore) {
+      case 1: return "Very Weak";
+      case 2: return "Weak";
+      case 3: return "Fair";
+      case 4: return "Strong";
+      case 5: return "Very Strong";
+      default: return "";
+    }
+  };
 
   const redirectPath = location.state?.from || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+
+    if (isSignUp) {
+      if (!isPasswordValid) {
+        setErrorMsg("Please ensure your password meets all strength requirements.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Passwords do not match.");
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -145,23 +182,164 @@ export default function LoginScreen() {
 
         <div>
           <label style={{ display: "block", fontSize: 11, fontWeight: "700", color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" }}>Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            style={{
-              width: "100%",
-              padding: "14px 16px",
-              borderRadius: 14,
-              border: "1px solid #333",
-              background: "#121212",
-              color: "#fff",
-              fontSize: 14,
-            }}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              style={{
+                width: "100%",
+                padding: "14px 48px 14px 16px",
+                borderRadius: 14,
+                border: "1px solid #333",
+                background: "#121212",
+                color: "#fff",
+                fontSize: 14,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                color: "#94a3b8",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 4
+              }}
+            >
+              {showPassword ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              )}
+            </button>
+          </div>
+          {isSignUp && password && (
+            <>
+              <div style={{ display: "flex", gap: 4, marginTop: 8, height: 6 }}>
+                {[1, 2, 3, 4, 5].map((level) => {
+                  let color = "#333";
+                  if (strengthScore >= level) {
+                    if (strengthScore <= 2) color = "#ef4444";
+                    else if (strengthScore === 3) color = "#f97316";
+                    else if (strengthScore === 4) color = "#eab308";
+                    else color = "#22c55e";
+                  }
+                  return (
+                    <div
+                      key={level}
+                      style={{
+                        flex: 1,
+                        backgroundColor: color,
+                        borderRadius: 3,
+                        transition: "background-color 0.2s ease"
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+                <span style={{ fontSize: 11, color: "#94a3b8" }}>Password Strength:</span>
+                <span style={{ 
+                  fontSize: 11, 
+                  fontWeight: "bold",
+                  color: strengthScore <= 2 ? "#ef4444" : strengthScore === 3 ? "#f97316" : strengthScore === 4 ? "#eab308" : "#22c55e"
+                }}>
+                  {getStrengthText()}
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
+                {rules.map((rule) => (
+                  <div key={rule.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                    <span style={{
+                      color: rule.test ? "#22c55e" : "#64748b",
+                      transition: "color 0.2s"
+                    }}>
+                      {rule.test ? "✓" : "○"}
+                    </span>
+                    <span style={{
+                      color: rule.test ? "#e2e8f0" : "#64748b",
+                      transition: "color 0.2s"
+                    }}>
+                      {rule.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
+
+        {isSignUp && (
+          <div>
+            <label style={{ display: "block", fontSize: 11, fontWeight: "700", color: "#94a3b8", marginBottom: 6, textTransform: "uppercase" }}>Confirm Password</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{
+                  width: "100%",
+                  padding: "14px 48px 14px 16px",
+                  borderRadius: 14,
+                  border: "1px solid #333",
+                  background: "#121212",
+                  color: "#fff",
+                  fontSize: 14,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 4
+                }}
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
+              </button>
+            </div>
+            {confirmPassword && (
+              <div style={{ 
+                fontSize: 12, 
+                marginTop: 6, 
+                color: password === confirmPassword ? "#22c55e" : "#ef4444",
+                fontWeight: "600",
+                display: "flex",
+                alignItems: "center",
+                gap: 4
+              }}>
+                <span>{password === confirmPassword ? "✓ Passwords match" : "✗ Passwords do not match"}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           type="submit"
@@ -191,6 +369,9 @@ export default function LoginScreen() {
           onClick={() => {
             setIsSignUp(!isSignUp);
             setErrorMsg("");
+            setPassword("");
+            setConfirmPassword("");
+            setShowPassword(false);
           }}
           style={{
             color: "#d4af37",

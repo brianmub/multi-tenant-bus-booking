@@ -12,14 +12,54 @@ interface LoginScreenProps {
 export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const rules = [
+    { id: 'len', label: 'At least 8 characters', test: password.length >= 8 },
+    { id: 'upper', label: 'At least one uppercase letter (A-Z)', test: /[A-Z]/.test(password) },
+    { id: 'lower', label: 'At least one lowercase letter (a-z)', test: /[a-z]/.test(password) },
+    { id: 'num', label: 'At least one number (0-9)', test: /[0-9]/.test(password) },
+    { id: 'special', label: 'At least one special char (e.g. !@#$)', test: /[^A-Za-z0-9]/.test(password) }
+  ];
+
+  const strengthScore = rules.filter(r => r.test).length;
+  const isPasswordValid = strengthScore === rules.length;
+
+  const getStrengthText = () => {
+    if (!password) return '';
+    switch (strengthScore) {
+      case 1: return 'Very Weak';
+      case 2: return 'Weak';
+      case 3: return 'Fair';
+      case 4: return 'Strong';
+      case 5: return 'Very Strong';
+      default: return '';
+    }
+  };
 
   const handleAuth = async () => {
     if (!email || !password || (isSignUp && !name)) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
+    }
+
+    if (isSignUp) {
+      if (!confirmPassword) {
+        Alert.alert('Error', 'Please confirm your password');
+        return;
+      }
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+      if (!isPasswordValid) {
+        Alert.alert('Error', 'Please ensure your password meets all strength requirements');
+        return;
+      }
     }
 
     setLoading(true);
@@ -108,18 +148,116 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor="#666"
-            secureTextEntry
-            autoCapitalize="none"
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordInputWrapper}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="••••••••"
+              placeholderTextColor="#666"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeButton} 
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={styles.eyeButtonText}>
+                {showPassword ? '👁️' : '🙈'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleAuth} disabled={loading}>
+        {isSignUp && password.length > 0 && (
+          <View style={styles.strengthContainer}>
+            <View style={styles.strengthBarContainer}>
+              {[1, 2, 3, 4, 5].map((level) => {
+                let color = '#333333';
+                if (strengthScore >= level) {
+                  if (strengthScore <= 2) color = '#ef4444';
+                  else if (strengthScore === 3) color = '#f97316';
+                  else if (strengthScore === 4) color = '#eab308';
+                  else color = '#22c55e';
+                }
+                return (
+                  <View
+                    key={level}
+                    style={[styles.strengthSegment, { backgroundColor: color }]}
+                  />
+                );
+              })}
+            </View>
+            
+            <View style={styles.strengthTextRow}>
+              <Text style={styles.strengthLabel}>Password Strength:</Text>
+              <Text style={[
+                styles.strengthValue,
+                { color: strengthScore <= 2 ? '#ef4444' : strengthScore === 3 ? '#f97316' : strengthScore === 4 ? '#eab308' : '#22c55e' }
+              ]}>
+                {getStrengthText()}
+              </Text>
+            </View>
+
+            <View style={styles.rulesContainer}>
+              {rules.map((rule) => (
+                <View key={rule.id} style={styles.ruleRow}>
+                  <Text style={[
+                    styles.ruleBullet,
+                    { color: rule.test ? '#22c55e' : '#666666' }
+                  ]}>
+                    {rule.test ? '✓' : '•'}
+                  </Text>
+                  <Text style={[
+                    styles.ruleText,
+                    { color: rule.test ? '#ffffff' : '#888888' }
+                  ]}>
+                    {rule.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {isSignUp && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Confirm Password</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="••••••••"
+                placeholderTextColor="#666"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton} 
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeButtonText}>
+                  {showPassword ? '👁️' : '🙈'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {confirmPassword.length > 0 && (
+              <Text style={[
+                styles.matchText,
+                { color: password === confirmPassword ? '#22c55e' : '#ef4444' }
+              ]}>
+                {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </Text>
+            )}
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={handleAuth} 
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator size="small" color="#121212" />
           ) : (
@@ -127,7 +265,15 @@ export default function LoginScreen({ onLoginSuccess, onContinueAsGuest }: Login
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.switchButton} onPress={() => setIsSignUp(!isSignUp)}>
+        <TouchableOpacity 
+          style={styles.switchButton} 
+          onPress={() => {
+            setIsSignUp(!isSignUp);
+            setPassword('');
+            setConfirmPassword('');
+            setShowPassword(false);
+          }}
+        >
           <Text style={styles.switchText}>
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </Text>
@@ -265,5 +411,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  passwordInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333333',
+    width: '100%',
+  },
+  passwordInput: {
+    flex: 1,
+    color: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+  },
+  eyeButton: {
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeButtonText: {
+    fontSize: 18,
+  },
+  matchText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  strengthContainer: {
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  strengthBarContainer: {
+    flexDirection: 'row',
+    height: 6,
+    gap: 4,
+    marginBottom: 8,
+  },
+  strengthSegment: {
+    flex: 1,
+    borderRadius: 3,
+  },
+  strengthTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  strengthLabel: {
+    fontSize: 12,
+    color: '#a0a0a0',
+  },
+  strengthValue: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  rulesContainer: {
+    gap: 6,
+  },
+  ruleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ruleBullet: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  ruleText: {
+    fontSize: 12,
+  },
+  buttonDisabled: {
+    backgroundColor: '#4a4a4a',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonTextDisabled: {
+    color: '#bbb',
   },
 });
